@@ -46,9 +46,9 @@ try:
         stock_sheet = sheet.add_worksheet(title="LIVE_CURRENT_STOCK", rows="1000", cols="10")
 
     try:
-        history_sheet = sheet.worksheet("PART_HISTORY")
+        history_sheet = sheet.worksheet("STOCK_HISTORY")
     except:
-        history_sheet = sheet.add_worksheet(title="PART_HISTORY", rows="2000", cols="15")
+        history_sheet = sheet.add_worksheet(title="STOCK_HISTORY", rows="2000", cols="15")
 
     try:
         maintenance_sheet = sheet.worksheet("BUS_MAINTENANCE")
@@ -93,13 +93,15 @@ def sync_stock_to_google():
 def sync_transactions_to_google():
     if history_sheet is None:
         return
+
     conn = get_db()
     c = conn.cursor()
 
     c.execute("""
-    SELECT created_at, txn_type, part_name, quantity, bus_number, mechanic_name, reason
+    SELECT txn_id, part_id, part_name, txn_type, quantity,
+           bus_number, mechanic_name, reason, created_at
     FROM stock_transactions
-    ORDER BY created_at DESC
+    ORDER BY id DESC
     """)
 
     rows = c.fetchall()
@@ -108,13 +110,15 @@ def sync_transactions_to_google():
     history_sheet.clear()
 
     history_sheet.append_row([
-        "Date",
-        "Type",
+        "Transaction ID",
+        "Part ID",
         "Part Name",
-        "Qty",
+        "Type",
+        "Quantity",
         "Bus Number",
         "Employee",
-        "Reason"
+        "Reason",
+        "Date"
     ])
 
     for row in rows:
@@ -124,13 +128,15 @@ def sync_transactions_to_google():
 def sync_maintenance_to_google():
     if maintenance_sheet is None:
         return
+
     conn = get_db()
     c = conn.cursor()
 
     c.execute("""
-    SELECT created_at, bus_number, mechanic_name, issue_description, parts_used, status
+    SELECT created_at, bus_number, mechanic_name,
+           issue_description, parts_used, status
     FROM maintenance_records
-    ORDER BY created_at DESC
+    ORDER BY id DESC
     """)
 
     rows = c.fetchall()
@@ -149,6 +155,7 @@ def sync_maintenance_to_google():
 
     for row in rows:
         maintenance_sheet.append_row(list(row))
+        
 DB = "fleetstock.db"
 
 def get_db():
@@ -1131,7 +1138,7 @@ def maintenance():
             max(0, float(request.form["repair_cost"])),
             request.form["status"],
             request.form["notes"],
-            datetime.now().isoformat()
+            datetime.now().strftime("%d-%m-%Y %I:%M %p")
         ))
 
         conn.commit()
@@ -1677,7 +1684,7 @@ def add_part():
             alert_qty,
             rack,
             notes,
-            datetime.now().isoformat()
+            datetime.now().strftime("%d-%m-%Y %I:%M %p")
         ))
         c.execute("""
         INSERT INTO stock_transactions
@@ -1692,7 +1699,7 @@ def add_part():
             "",
             "",
             "New stock added",
-            datetime.now().isoformat()
+            datetime.now().strftime("%d-%m-%Y %I:%M %p")
         ))
 
     conn.commit()
@@ -1740,7 +1747,7 @@ def stock_in(item_id):
             "",
             "",
             reason,
-            datetime.now().isoformat()
+            datetime.now().strftime("%d-%m-%Y %I:%M %p")
         ))
 
         conn.commit()
@@ -1794,7 +1801,7 @@ def stock_out(item_id):
             bus_number,
             mechanic_name,
             reason,
-            datetime.now().isoformat()
+            datetime.now().strftime("%d-%m-%Y %I:%M %p")
         ))
 
         c.execute("""
@@ -1812,7 +1819,7 @@ def stock_out(item_id):
             0,
             vehicle_condition,
             "Auto created from part issue",
-            datetime.now().isoformat()
+            datetime.now().strftime("%d-%m-%Y %I:%M %p")
         ))
 
         conn.commit()
@@ -1995,7 +2002,7 @@ def issue_parts():
                     bus_number,
                     employee,
                     reason,
-                    datetime.now().isoformat()
+                    datetime.now().strftime("%d-%m-%Y %I:%M %p")
                 ))
 
                 used_parts.append(f"{part[1]} x {qty}")
@@ -2019,7 +2026,7 @@ def issue_parts():
             0,
             vehicle_condition,
             "Auto created from issue parts",
-            datetime.now().isoformat()
+            datetime.now().strftime("%d-%m-%Y %I:%M %p")
         ))
 
         conn.commit()
