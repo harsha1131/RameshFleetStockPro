@@ -17,20 +17,9 @@ stock_sheet = None
 history_sheet = None
 maintenance_sheet = None
 
-try:
-    stock_sheet = sheet.worksheet("LIVE_CURRENT_STOCK")
-except:
-    stock_sheet = sheet.add_worksheet(title="LIVE_CURRENT_STOCK", rows="1000", cols="10")
-
-try:
-    history_sheet = sheet.worksheet("STOCK_HISTORY")
-except:
-    history_sheet = sheet.add_worksheet(title="STOCK_HISTORY", rows="5000", cols="10")
-
-try:
-    maintenance_sheet = sheet.worksheet("BUS_MAINTENANCE")
-except:
-    maintenance_sheet = sheet.add_worksheet(title="BUS_MAINTENANCE", rows="5000", cols="10")
+stock_sheet = None
+history_sheet = None
+maintenance_sheet = None
 
 
 def sync_stock_to_google():
