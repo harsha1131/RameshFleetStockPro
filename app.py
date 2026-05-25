@@ -1454,6 +1454,7 @@ def transactions():
                 <th>Mechanic</th>
                 <th>Reason</th>
                 <th>Date</th>
+                <th>Action</th>
             </tr>
 
             {% for txn in transactions %}
@@ -1466,6 +1467,14 @@ def transactions():
                 <td>{{ txn[5] }}</td>
                 <td>{{ txn[6] }}</td>
                 <td>{{ txn[7] }}</td>
+                <td>
+                    <a href="/delete_transaction/{{ txn[0] }}"
+                    class="btn"
+                    style="background:red;"
+                    onclick="return confirm('Delete this transaction?')">
+                    Delete
+                    </a>
+                </td>
             </tr>
             {% endfor %}
         </table>
@@ -1474,6 +1483,20 @@ def transactions():
     """
 
     return render_template_string(TRANSACTION_HTML, transactions=transactions)
+
+@app.route("/delete_transaction/<txn_id>")
+def delete_transaction(txn_id):
+    conn = get_db()
+    c = conn.cursor()
+
+    c.execute("DELETE FROM stock_transactions WHERE txn_id=?", (txn_id,))
+    conn.commit()
+
+    sync_transactions_to_google()
+
+    conn.close()
+
+    return redirect(url_for("transactions"))
 
 @app.route("/")
 def home():
