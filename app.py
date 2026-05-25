@@ -6,23 +6,62 @@ from reportlab.platypus import SimpleDocTemplate, Table
 from flask import Response
 import gspread
 import os
+import json
 from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
 # GOOGLE SHEETS SETUP
-scope = []
+scope = [
+    "https://spreadsheets.google.com/feeds",
+    "https://www.googleapis.com/auth/drive"
+]
+
+google_creds = json.loads(os.environ["GOOGLE_CREDS"])
+
+creds = ServiceAccountCredentials.from_json_keyfile_dict(
+    google_creds,
+    scope
+)
+
 client = None
 sheet = None
 stock_sheet = None
 history_sheet = None
 maintenance_sheet = None
 
-stock_sheet = None
-history_sheet = None
-maintenance_sheet = None
+try:
+    google_creds = json.loads(os.environ["GOOGLE_CREDS"])
+
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(
+        google_creds,
+        scope
+    )
+
+    client = gspread.authorize(creds)
+    sheet = client.open("Ramesh Fleet Live Stock")
+
+    try:
+        stock_sheet = sheet.worksheet("LIVE_CURRENT_STOCK")
+    except:
+        stock_sheet = sheet.add_worksheet(title="LIVE_CURRENT_STOCK", rows="1000", cols="10")
+
+    try:
+        history_sheet = sheet.worksheet("PART_HISTORY")
+    except:
+        history_sheet = sheet.add_worksheet(title="PART_HISTORY", rows="2000", cols="15")
+
+    try:
+        maintenance_sheet = sheet.worksheet("BUS_MAINTENANCE")
+    except:
+        maintenance_sheet = sheet.add_worksheet(title="BUS_MAINTENANCE", rows="2000", cols="15")
+
+except Exception as e:
+    print("Google Sheets disabled:", e)
 
 
 def sync_stock_to_google():
+    if stock_sheet is None:
+        return
     conn = get_db()
     c = conn.cursor()
 
@@ -51,6 +90,8 @@ def sync_stock_to_google():
 
 
 def sync_transactions_to_google():
+    if history_sheet is None:
+        return
     conn = get_db()
     c = conn.cursor()
 
@@ -80,6 +121,8 @@ def sync_transactions_to_google():
 
 
 def sync_maintenance_to_google():
+    if maintenance_sheet is None:
+        return
     conn = get_db()
     c = conn.cursor()
 
@@ -1239,14 +1282,6 @@ def maintenance():
                 {% endif %}
                 </td>
                 <td>{{ r[8] }}</td>
-                <td>
-                    <a href="/edit_maintenance/{{ r[0] }}" class="btn">Edit</a>
-                    <a href="/delete_maintenance/{{ r[0] }}" class="btn" style="background:red;"
-                    onclick="return confirm('Delete this maintenance record?')">
-                    Delete
-                    </a>
-                </td>
-
                 <td>
                     <a href="/edit_maintenance/{{ r[0] }}" class="btn">Edit</a>
                     <a href="/delete_maintenance/{{ r[0] }}" class="btn" style="background:red;"
