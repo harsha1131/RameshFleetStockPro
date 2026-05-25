@@ -66,7 +66,7 @@ def sync_stock_to_google():
     c = conn.cursor()
 
     c.execute("""
-    SELECT part_id, name, category, quantity, price, rack
+    SELECT part_id, name, category, quantity, price, supplier, rack
     FROM spare_parts
     ORDER BY name
     """)
@@ -82,6 +82,7 @@ def sync_stock_to_google():
         "Category",
         "Current Qty",
         "Price",
+        "Supplier",
         "Rack"
     ])
 
@@ -1256,7 +1257,6 @@ def maintenance():
                 <th>Parts Used</th>
                 <th>Cost</th>
                 <th>Status</th>
-                <th>Status</th>
                 <th>Date</th>
                 <th>Actions</th>
             </tr>
@@ -1679,6 +1679,21 @@ def add_part():
             notes,
             datetime.now().isoformat()
         ))
+        c.execute("""
+        INSERT INTO stock_transactions
+        (txn_id, part_id, part_name, txn_type, quantity, bus_number, mechanic_name, reason, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            next_txn_id(),
+            part_id,
+            name,
+            "IN",
+            quantity,
+            "",
+            "",
+            "New stock added",
+            datetime.now().isoformat()
+        ))
 
     conn.commit()
 
@@ -1920,7 +1935,7 @@ def delete_part(item_id):
     conn.commit()
 
     sync_stock_to_google()
-
+    sync_transactions_to_google()
     conn.close()
     return redirect(url_for("home"))
 
