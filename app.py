@@ -1,6 +1,7 @@
 from flask import Flask, render_template_string, request, redirect, url_for, send_file
 import sqlite3
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import csv
 from reportlab.platypus import SimpleDocTemplate, Table
 from flask import Response
@@ -1138,7 +1139,7 @@ def maintenance():
             max(0, float(request.form["repair_cost"])),
             request.form["status"],
             request.form["notes"],
-            datetime.now().strftime("%d-%m-%Y %I:%M %p")
+            datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d-%m-%Y %I:%M %p")
         ))
 
         conn.commit()
@@ -1684,7 +1685,7 @@ def add_part():
             alert_qty,
             rack,
             notes,
-            datetime.now().strftime("%d-%m-%Y %I:%M %p")
+            datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d-%m-%Y %I:%M %p")
         ))
         c.execute("""
         INSERT INTO stock_transactions
@@ -1699,7 +1700,7 @@ def add_part():
             "",
             "",
             "New stock added",
-            datetime.now().strftime("%d-%m-%Y %I:%M %p")
+            datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d-%m-%Y %I:%M %p")
         ))
 
     conn.commit()
@@ -1747,7 +1748,7 @@ def stock_in(item_id):
             "",
             "",
             reason,
-            datetime.now().strftime("%d-%m-%Y %I:%M %p")
+            datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d-%m-%Y %I:%M %p")
         ))
 
         conn.commit()
@@ -1801,7 +1802,7 @@ def stock_out(item_id):
             bus_number,
             mechanic_name,
             reason,
-            datetime.now().strftime("%d-%m-%Y %I:%M %p")
+            datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d-%m-%Y %I:%M %p")
         ))
 
         c.execute("""
@@ -1810,7 +1811,7 @@ def stock_out(item_id):
         mechanic_name, parts_used, repair_cost, status, notes, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            f"MAIN{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            f"MAIN{datetime.now(ZoneInfo("Asia/Kolkata")).strftime('%Y%m%d%H%M%S')}",
             bus_number,
             "",
             reason,
@@ -1819,7 +1820,7 @@ def stock_out(item_id):
             0,
             vehicle_condition,
             "Auto created from part issue",
-            datetime.now().strftime("%d-%m-%Y %I:%M %p")
+            datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d-%m-%Y %I:%M %p")
         ))
 
         conn.commit()
@@ -2002,7 +2003,7 @@ def issue_parts():
                     bus_number,
                     employee,
                     reason,
-                    datetime.now().strftime("%d-%m-%Y %I:%M %p")
+                    datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d-%m-%Y %I:%M %p")
                 ))
 
                 used_parts.append(f"{part[1]} x {qty}")
@@ -2017,7 +2018,7 @@ def issue_parts():
          mechanic_name, parts_used, repair_cost, status, notes, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            f"MAIN{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            f"MAIN{datetime.now(ZoneInfo("Asia/Kolkata")).strftime('%Y%m%d%H%M%S')}",
             bus_number,
             "",
             reason,
@@ -2026,7 +2027,7 @@ def issue_parts():
             0,
             vehicle_condition,
             "Auto created from issue parts",
-            datetime.now().strftime("%d-%m-%Y %I:%M %p")
+            datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d-%m-%Y %I:%M %p")
         ))
 
         conn.commit()
