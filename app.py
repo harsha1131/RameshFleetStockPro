@@ -9,20 +9,9 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
 # GOOGLE SHEETS SETUP
-scope = [
-    "https://spreadsheets.google.com/feeds",
-    "https://www.googleapis.com/auth/drive"
-]
-
-creds = ServiceAccountCredentials.from_json_keyfile_name(
-    "rameshfleetstock-e219cdd4d548.json",
-    scope
-)
-
-client = gspread.authorize(creds)
-
-sheet = client.open("Ramesh Fleet Live Stock")
-
+scope = []
+client = None
+sheet = None
 stock_sheet = None
 history_sheet = None
 maintenance_sheet = None
