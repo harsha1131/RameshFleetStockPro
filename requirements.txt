@@ -1,0 +1,5 @@
+Flask==3.0.3
+gunicorn==23.0.0
+reportlab==4.2.2
+gspread==6.1.2
+oauth2client==4.1.3
