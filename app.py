@@ -559,6 +559,10 @@ td {
     <div class="nav" onclick="window.location.href='/vehicle_status'">
         Vehicle Status
     </div>
+    
+    <div class="nav" onclick="window.location.href='/download_backup'">
+        Download Backup
+    </div>
 </div>
 
 <div class="main">
@@ -1037,6 +1041,7 @@ def buses():
         <tr>
             <th>ID</th>
             <th>Bus Number</th>
+            <th>History</th>
             <th>Action</th>
         </tr>
 
@@ -1047,6 +1052,13 @@ def buses():
             <td>{{ bus[1] }}</td>
 
             <td>
+                <a href="/bus_history/{{ bus[1] }}"
+                class="btn">
+                History
+                </a>
+                </td>
+
+                <td>
                 <a href="/delete_bus/{{ bus[0] }}"
                 class="btn"
                 style="background:red;"
@@ -1068,6 +1080,107 @@ def buses():
         BUS_HTML,
         buses=buses
     )
+    
+@app.route("/bus_history/<bus_number>")
+def bus_history(bus_number):
+
+    conn = get_db()
+    c = conn.cursor()
+
+    c.execute("""
+    SELECT part_name,
+           quantity,
+           mechanic_name,
+           reason,
+           created_at
+    FROM stock_transactions
+    WHERE bus_number=?
+    ORDER BY id DESC
+    """, (bus_number,))
+
+    records = c.fetchall()
+
+    conn.close()
+
+    return render_template_string("""
+
+    <html>
+    <head>
+    <title>Bus History</title>
+
+    <style>
+    body{
+        font-family:Arial;
+        padding:30px;
+        background:#f3f7f4;
+    }
+
+    table{
+        width:100%;
+        background:white;
+        border-collapse:collapse;
+    }
+
+    th{
+        background:#dcfce7;
+        padding:12px;
+    }
+
+    td{
+        padding:12px;
+        border-bottom:1px solid #eee;
+    }
+
+    .btn{
+        background:#16a34a;
+        color:white;
+        padding:10px 15px;
+        text-decoration:none;
+        border-radius:10px;
+    }
+    </style>
+
+    </head>
+
+    <body>
+
+    <h1>Bus History - {{ bus_number }}</h1>
+
+    <a href="/buses" class="btn">
+    Back
+    </a>
+
+    <br><br>
+
+    <table>
+
+    <tr>
+        <th>Part</th>
+        <th>Qty</th>
+        <th>Employee</th>
+        <th>Reason</th>
+        <th>Date</th>
+    </tr>
+
+    {% for r in records %}
+    <tr>
+        <td>{{ r[0] }}</td>
+        <td>{{ r[1] }}</td>
+        <td>{{ r[2] }}</td>
+        <td>{{ r[3] }}</td>
+        <td>{{ r[4] }}</td>
+    </tr>
+    {% endfor %}
+
+    </table>
+
+    </body>
+    </html>
+
+    """,
+    records=records,
+    bus_number=bus_number)
+    
 @app.route("/delete_bus/<int:id>")
 def delete_bus(id):
 
@@ -1730,11 +1843,27 @@ def inventory():
     conn = get_db()
     c = conn.cursor()
 
-    c.execute("""
-    SELECT *
-    FROM spare_parts
-    ORDER BY name
-    """)
+    search = request.args.get("search", "").strip()
+
+    if search:
+        c.execute("""
+        SELECT *
+        FROM spare_parts
+        WHERE name LIKE ?
+        OR category LIKE ?
+        OR rack LIKE ?
+        ORDER BY name
+        """, (
+            f"%{search}%",
+            f"%{search}%",
+            f"%{search}%"
+        ))
+    else:
+        c.execute("""
+        SELECT *
+        FROM spare_parts
+        ORDER BY name
+        """)
 
     parts = c.fetchall()
     conn.close()
@@ -1786,6 +1915,20 @@ def inventory():
     <body>
         <h1>Full Inventory Stock</h1>
         <a href="/" class="btn">Back</a>
+        <br><br>
+
+        <form method="GET">
+            <input
+                type="text"
+                name="search"
+                placeholder="Search Part / Category / Rack"
+                value="{{ search }}"
+                style="padding:12px;width:350px;border:1px solid #ccc;border-radius:10px;">
+
+            <button class="btn">
+                Search
+            </button>
+        </form>
 
         <table>
             <tr>
@@ -1814,7 +1957,11 @@ def inventory():
     </html>
     """
 
-    return render_template_string(INVENTORY_HTML, parts=parts)
+    return render_template_string(
+        INVENTORY_HTML,
+        parts=parts,
+        search=search
+    )
 
 @app.route("/add", methods=["POST"])
 def add_part():
@@ -2582,6 +2729,13 @@ def vehicle_status():
     under_repair_count=under_repair_count,
     critical_count=critical_count
 )
+
+@app.route("/download_backup")
+def download_backup():
+    return send_file(
+        "fleetstock.db",
+        as_attachment=True
+    )
 
 @app.route("/inventory_pdf")
 def inventory_pdf():
