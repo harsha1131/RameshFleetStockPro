@@ -237,6 +237,13 @@ def init_db():
         experience TEXT
     )
     """)
+    
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS buses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bus_number TEXT UNIQUE
+    )
+    """)
 
     conn.commit()
     conn.close()
@@ -542,6 +549,10 @@ td {
 
     <div class="nav" onclick="window.location.href='/employees'">
         Employees
+    </div>
+    
+    <div class="nav" onclick="window.location.href='/buses'">
+        Buses
     </div>
     
     <div class="nav" onclick="window.location.href='/vehicle_status'">
@@ -924,6 +935,153 @@ def edit_supplier(supplier_id):
     """
 
     return render_template_string(EDIT_HTML, supplier=supplier)
+
+@app.route("/buses", methods=["GET", "POST"])
+def buses():
+
+    conn = get_db()
+    c = conn.cursor()
+
+    if request.method == "POST":
+
+        bus_number = request.form["bus_number"].upper().strip()
+
+        try:
+            c.execute(
+                "INSERT INTO buses (bus_number) VALUES (?)",
+                (bus_number,)
+            )
+            conn.commit()
+        except:
+            pass
+
+    c.execute("""
+    SELECT id, bus_number
+    FROM buses
+    ORDER BY bus_number
+    """)
+
+    buses = c.fetchall()
+
+    conn.close()
+
+    BUS_HTML = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Bus Management</title>
+
+    <style>
+    body{
+        font-family:Arial;
+        background:#f3f7f4;
+        padding:30px;
+    }
+
+    .btn{
+        background:#16a34a;
+        color:white;
+        padding:10px 15px;
+        border:none;
+        border-radius:10px;
+        text-decoration:none;
+        cursor:pointer;
+    }
+
+    table{
+        width:100%;
+        background:white;
+        border-collapse:collapse;
+        margin-top:20px;
+    }
+
+    th{
+        background:#dcfce7;
+        padding:12px;
+    }
+
+    td{
+        padding:12px;
+        border-bottom:1px solid #eee;
+    }
+
+    input{
+        padding:12px;
+        width:300px;
+    }
+    </style>
+    </head>
+
+    <body>
+
+    <h1>Bus Management</h1>
+
+    <a href="/" class="btn">Back</a>
+
+    <br><br>
+
+    <form method="POST">
+        <input
+            name="bus_number"
+            placeholder="AP-39-TH-3343"
+            required>
+
+        <button class="btn">
+            Add Bus
+        </button>
+    </form>
+
+    <table>
+
+        <tr>
+            <th>ID</th>
+            <th>Bus Number</th>
+            <th>Action</th>
+        </tr>
+
+        {% for bus in buses %}
+        <tr>
+
+            <td>{{ bus[0] }}</td>
+            <td>{{ bus[1] }}</td>
+
+            <td>
+                <a href="/delete_bus/{{ bus[0] }}"
+                class="btn"
+                style="background:red;"
+                onclick="return confirm('Delete bus?')">
+                Delete
+                </a>
+            </td>
+
+        </tr>
+        {% endfor %}
+
+    </table>
+
+    </body>
+    </html>
+    """
+
+    return render_template_string(
+        BUS_HTML,
+        buses=buses
+    )
+@app.route("/delete_bus/<int:id>")
+def delete_bus(id):
+
+    conn = get_db()
+    c = conn.cursor()
+
+    c.execute(
+        "DELETE FROM buses WHERE id=?",
+        (id,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("buses"))
 
 @app.route("/employees", methods=["GET", "POST"])
 def employees():
@@ -2069,7 +2227,15 @@ def issue_parts():
     c.execute("SELECT employee_id, name FROM employees ORDER BY name")
     employees = c.fetchall()
 
+    c.execute("""
+    SELECT bus_number
+    FROM buses
+    ORDER BY bus_number
+    """)
+    bus_list = c.fetchall()
+
     conn.close()
+
 
     ISSUE_HTML = """
     <!DOCTYPE html>
@@ -2140,7 +2306,17 @@ def issue_parts():
                     {% endfor %}
                 </select>
 
-                <input type="text" name="bus_number" placeholder="Bus Number" required>
+                <input
+                    list="bus_numbers"
+                    name="bus_number"
+                    placeholder="Search Bus Number"
+                    required>
+
+                    <datalist id="bus_numbers">
+                    {% for bus in bus_list %}
+                    <option value="{{ bus[0] }}">
+                    {% endfor %}
+                    </datalist>
 
                 <div id="partsContainer" style="grid-column: span 2;"></div>
 
@@ -2195,10 +2371,11 @@ window.onload = function() {
     """
 
     return render_template_string(
-        ISSUE_HTML,
-        parts=parts,
-        employees=employees
-    )
+    ISSUE_HTML,
+    parts=parts,
+    employees=employees,
+    bus_list=bus_list
+)
 
 @app.route("/vehicle_status")
 def vehicle_status():
