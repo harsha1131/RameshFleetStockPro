@@ -11,7 +11,6 @@ import json
 from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
-init_db()
 # GOOGLE SHEETS SETUP
 scope = [
     "https://spreadsheets.google.com/feeds",
@@ -248,8 +247,8 @@ def init_db():
 
     conn.commit()
     conn.close()
-    init_db()
-
+    
+init_db()
 def next_part_id():
     conn = get_db()
     c = conn.cursor()
